@@ -45,7 +45,7 @@ A curated collection of awesome GitHub repositories, organized by category for e
 
 ## 🔍 Search
 
-Use the search bar above or press `Ctrl+K` to search across all repo descriptions and categories.
+Use the search bar or press <kbd>Ctrl</kbd>+<kbd>K</kbd> to search across all repo descriptions and categories.
 
 ## 📦 How to Add a New Repo
 

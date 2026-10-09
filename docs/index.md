@@ -1,7 +1,6 @@
 ---
 title: awesome Index
 description: Curated index of awesome GitHub repos organized by category
-layout: home
 ---
 # awesome Index
 
@@ -45,7 +44,7 @@ A curated collection of awesome GitHub repositories, organized by category for e
 
 ## 🔍 Search
 
-Use the search bar or press <kbd>Ctrl</kbd>+<kbd>K</kbd> to search across all repo descriptions and categories.
+Use the search bar to search across all repo descriptions and categories.
 
 ## 📦 How to Add a New Repo
 
@@ -60,5 +59,3 @@ Use the search bar or press <kbd>Ctrl</kbd>+<kbd>K</kbd> to search across all re
 Each repo page includes a comment section powered by [Utterances](https://utterances.app/), tied to a GitHub Issue for discussion.
 
 ---
-
-_Last updated: {{ .Site.LastUpdated }}_

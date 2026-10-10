@@ -1,0 +1,48 @@
+schema: spec-driven
+
+context: |
+  Repo: awesomes — a public GitHub Pages site at awesome.rairahulr1.com that indexes
+  curated `awesome-*` GitHub lists. Not an application in the usual sense: markdown
+  entries, generated data, and static output.
+
+  Two bodies of work live here:
+    Body A — 10 hand-written entry pages under docs/repos/, one per indexed awesome
+    list. These are the curated, human-owned surface and the canonical SEO pages.
+    Body B — a flat index of every repository mentioned *inside* those lists
+    (~5,186 entries, planned). Generated, never hand-edited.
+
+  "Correct" means accurate, dated, and attributable. An entry's description is the
+  source list curator's wording, not a claim this site makes.
+
+  Constraints that are not visible from the code:
+    - The 10 source READMEs use at least five incompatible link formats (markdown
+      tables, bulleted italic tails, bulleted plain tails, repo-relative paths,
+      per-project prose blocks). Each needs its own parser and its own fixture tests.
+    - Two lists (awesome-llm-apps, awesome-ai-apps) link to directories inside their
+      own repository rather than to external URLs. Resolving those against the source
+      repo's base URL is what makes ~259 projects visible at all; getting it wrong
+      makes them vanish silently rather than error.
+    - awesome-mcp-servers contributes ~4,153 of the ~5,186 entries, so it dominates
+      any relevance ranking and its quality skews the whole corpus.
+    - Entry-level star enrichment needs ~5,200 GitHub API calls: ~86 hours
+      unauthenticated, ~1 hour with GITHUB_TOKEN. The token is not optional.
+    - Entries are community-submitted links of unknown provenance. Nothing in the
+      pipeline verifies that a listed repository is maintained, safe, or good.
+
+rules:
+  specs:
+    - "Requirements describe behaviour that must hold, not prose that reads well."
+    - "Any requirement about a volatile fact (star count, last commit, entry count) must state that it is a point-in-time snapshot and carry an as-of date."
+    - "Entries must record which source list(s) mention them, so every description is attributable to a named curator."
+    - "The pipeline must never present an upstream curator's description as a verified fact about the repository."
+    - "Repo-relative links must be resolved against the source list's base URL; unresolved links must fail loudly rather than be dropped."
+    - "Deduplication is on canonical owner/repo. An entry appearing in two lists is one entry with two sources, not two entries."
+    - "A star refresh that fails must leave the previous value in place and report the failure; it must never write an empty or zero count."
+  design:
+    - "Prefer the option that keeps the 10 hand-written list pages working unchanged; the generated index is additive."
+    - "Sequence the parser work before the enrichment and rendering work, so the parser output can be reviewed before anything depends on it."
+  tasks:
+    - "Every task must be independently revertable."
+    - "Name the verification for each task; a parser with no fixture test is unverified."
+  proposal:
+    - "Keep scope honest. Explicitly list what is out of scope so a future reader does not assume it was overlooked."

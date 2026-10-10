@@ -2,9 +2,9 @@
   "name": "awesomes",
   "private": true,
   "scripts": {
-    "dev": "vitepress dev",
-    "build": "vitepress build",
-    "serve": "vitepress serve"
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "serve": "vitepress serve docs"
   },
   "dependencies": {
     "vitepress": "^1.0.0",

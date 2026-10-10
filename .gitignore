@@ -4,6 +4,9 @@ docs/.vitepress/cache/
 .vitepress/dist/
 .vitepress/cache/
 .cache/
+.venv-tools/
+__pycache__/
+*.pyc
 .DS_Store
 *.log
 

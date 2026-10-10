@@ -5,22 +5,73 @@ layout: page
 ---
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useData } from 'vitepress'
+import { decodeRecords, SSR_PAGE, CHUNK_DIR } from '../tools/entry_chunks.mjs'
+// Written by docs/.vitepress/config.mjs on every config load. Carries the first page of records —
+// the rows the static HTML below already rendered — so SSR and hydration agree on the markup
+// without a fetch, plus everything needed to decode and filter them. The remaining rows arrive as
+// static JSON under /repo-index/, fetched only once a reader filters or searches.
+import bootstrap from './.vitepress/generated/repo-page.json'
 
 const { theme } = useData()
-const entryIndex = theme.value.entryIndex
-const entries = entryIndex.entries
 const sourceMeta = theme.value.sources
+
+const cap = SSR_PAGE
+const sourceIds = bootstrap.sourceIds
+const stats = bootstrap.stats
 
 const q = ref('')
 const source = ref('all')
 
+const CHUNK_BASE = `${import.meta.env.BASE_URL}${CHUNK_DIR}/`
+
+// What the static HTML rendered, plus whatever has been fetched since.
+const rows = decodeRecords(bootstrap.entries, sourceIds)
+const byIndex = new Map(rows.map((e) => [e.i, e]))
+const entries = ref(rows)
+
+const manifest = ref(null)
+const covered = ref([])
+const failed = ref(false)
+
 const sourceNames = computed(() => sourceMeta.map((s) => s.id))
+
+// Distribution. awesome-mcp-servers is the large majority of the corpus, so a plain
+// "N results" count would misrepresent any single-source view of it. Counts come from the build's
+// own aggregate rather than from the loaded rows, so the chips are correct before anything loads.
+const distribution = computed(() =>
+  bootstrap.sources
+    .map((s) => ({ id: s.id, page: s.page, count: s.count }))
+    .filter((s) => s.count > 0)
+    .sort((a, b) => b.count - a.count)
+)
+
+// Which chunks the current filter actually needs. Unfiltered, the answer is the total the build
+// already recorded; a source filter needs that source's chunks; a text query needs every chunk,
+// because it matches on description and not just on name.
+//
+// The `page` chunk is excluded from all three: those records arrived in this page's JS bundle, so
+// fetching page.json again would be a 70 KB request for bytes already in memory.
+const wanted = computed(() => {
+  if (!manifest.value) return []
+  const list = manifest.value.chunks.filter((c) => !c.page)
+  return source.value === 'all'
+    ? list.map((c) => c.key)
+    : list.filter((c) => c.source === source.value).map((c) => c.key)
+})
+
+const filtering = computed(() => q.value.trim() !== '' || source.value !== 'all')
+
+// True when the loaded rows are a superset of what the current filter needs. Until then any match
+// count would be a partial count presented as a total, so the page says it is still loading.
+const settled = computed(
+  () => !filtering.value || wanted.value.every((k) => covered.value.includes(k))
+)
 
 const results = computed(() => {
   const needle = q.value.trim().toLowerCase()
-  return entries.filter((e) => {
+  return entries.value.filter((e) => {
     if (source.value !== 'all' && !e.sources.includes(source.value)) return false
     if (!needle) return true
     return (
@@ -31,23 +82,60 @@ const results = computed(() => {
   })
 })
 
-// Source distribution. awesome-mcp-servers is the large majority of the corpus, so a plain
-// "N results" count would misrepresent any single-source view of it.
-const distribution = computed(() =>
-  sourceMeta
-    .map((s) => ({
-      id: s.id,
-      page: s.page,
-      count: entries.filter((e) => e.sources.includes(s.id)).length,
-    }))
-    .filter((s) => s.count > 0)
-    .sort((a, b) => b.count - a.count)
-)
+// Exact when the dataset covers the filter, otherwise the known corpus total — which is the
+// correct count for the default unfiltered view, and the only honest thing to show mid-load.
+const matchCount = computed(() => (filtering.value && settled.value ? results.value.length : stats.total))
 
-const multi = computed(() => entries.filter((e) => e.sources.length > 1).length)
-const described = computed(() => entries.filter((e) => (e.description || '').length > 8).length)
-const cap = 300
 const shown = computed(() => results.value.slice(0, cap))
+
+let loading = false
+async function loadChunks() {
+  if (loading) return
+  loading = true
+  failed.value = false
+  try {
+    for (;;) {
+      if (!manifest.value) {
+        const res = await fetch(`${CHUNK_BASE}manifest.json`)
+        if (!res.ok) throw new Error(`manifest.json ${res.status}`)
+        manifest.value = await res.json()
+      }
+      const want = wanted.value.filter((k) => !covered.value.includes(k))
+      if (!want.length) break
+      const bodies = await Promise.all(
+        want.map((k) =>
+          fetch(`${CHUNK_BASE}${k}.json`).then((res) => {
+            if (!res.ok) throw new Error(`${k}.json ${res.status}`)
+            return res.json()
+          }),
+        ),
+      )
+      // Rows arrive in whatever chunk order the fetches settle in; `i` is the index the extractor
+      // assigned, so sorting by it restores the corpus order the 300-row cap is defined against.
+      bodies.forEach((body, n) => {
+        for (const e of decodeRecords(body.e, manifest.value.sourceIds)) {
+          if (!byIndex.has(e.i)) byIndex.set(e.i, e)
+        }
+        if (!covered.value.includes(want[n])) covered.value.push(want[n])
+      })
+      entries.value = [...byIndex.values()].sort((a, b) => a.i - b.i)
+    }
+  } catch (err) {
+    failed.value = true
+    console.error('[repositories] could not load entry chunks:', err)
+  } finally {
+    loading = false
+  }
+}
+
+watch([q, source], () => {
+  loadChunks()
+})
+
+function reset() {
+  q.value = ''
+  source.value = 'all'
+}
 </script>
 
 <div class="ri">
@@ -58,11 +146,11 @@ const shown = computed(() => results.value.slice(0, cap))
       deduplicated on <code>owner/repo</code>. Descriptions are the source list curator's wording —
       this site has not verified that any of these repositories are maintained, safe, or good.
     </p>
-    <p v-if="entryIndex.generated_at" class="ri__stamp">
-      Generated {{ entryIndex.generated_at.slice(0, 10) }} from {{ sourceMeta.length }} sources ·
-      {{ entries.length.toLocaleString() }} unique ·
-      {{ multi }} listed in more than one source ·
-      {{ described.toLocaleString() }} carry a description
+    <p v-if="bootstrap.generated_at" class="ri__stamp">
+      Generated {{ bootstrap.generated_at.slice(0, 10) }} from {{ sourceMeta.length }} sources ·
+      {{ stats.total.toLocaleString() }} unique ·
+      {{ stats.multi }} listed in more than one source ·
+      {{ stats.described.toLocaleString() }} carry a description
     </p>
   </header>
 
@@ -80,9 +168,16 @@ const shown = computed(() => results.value.slice(0, cap))
     </select>
   </div>
 
-  <p class="ri__count">
-    {{ results.length.toLocaleString() }} match<template v-if="results.length !== 1">es</template>
-    <template v-if="results.length > cap"> · showing first {{ cap }}</template>
+  <p class="ri__count" aria-live="polite">
+    <template v-if="!settled">Searching {{ stats.total.toLocaleString() }} entries…</template>
+    <template v-else>
+      {{ matchCount.toLocaleString() }} match<template v-if="matchCount !== 1">es</template>
+      <template v-if="matchCount > cap"> · showing first {{ cap }}</template>
+    </template>
+    <template v-if="failed">
+      · could not load the full index.
+      <button class="ri__reset" @click="loadChunks">Retry</button>
+    </template>
   </p>
 
   <section class="ri__dist" aria-label="Share by source list">
@@ -98,8 +193,8 @@ const shown = computed(() => results.value.slice(0, cap))
     </button>
   </section>
 
-  <p v-if="!results.length" class="ri__empty">
-    Nothing matches. <button class="ri__reset" @click="q = ''; source = 'all'">Clear filters</button>
+  <p v-if="!results.length && settled" class="ri__empty">
+    Nothing matches. <button class="ri__reset" @click="reset">Clear filters</button>
   </p>
 
   <ul class="ri__list">
@@ -117,9 +212,9 @@ const shown = computed(() => results.value.slice(0, cap))
     </li>
   </ul>
 
-  <p v-if="results.length > cap" class="ri__more">
+  <p v-if="matchCount > cap" class="ri__more">
     Narrow the search to see more of the remaining
-    {{ (results.length - cap).toLocaleString() }}.
+    {{ (matchCount - cap).toLocaleString() }}.
   </p>
 </div>
 

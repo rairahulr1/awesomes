@@ -22,6 +22,13 @@ import sys
 import urllib.request
 from datetime import datetime, timezone
 
+try:
+    from scrapling.fetchers import Fetcher
+
+    SCRAPLING = True
+except ImportError:  # stdlib fallback keeps extraction runnable without the venv
+    SCRAPLING = False
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "sources.json"
 OUT = ROOT / "data" / "entries.json"
@@ -201,16 +208,43 @@ PARSERS = {
 
 
 def fetch_readme(src: dict, offline: bool = False) -> str:
+    """Read a source README, via Scrapling when it is installed.
+
+    Scrapling's fetcher handles TLS fingerprinting and retries, which raw
+    githubusercontent fetches occasionally need. The response body arrives as
+    bytes even for a plain .md file, so it is decoded here rather than relying
+    on a text accessor. When Scrapling is absent the stdlib path is used, so
+    extraction stays runnable on a bare interpreter.
+    """
     CACHE.mkdir(parents=True, exist_ok=True)
     cached = CACHE / f"{src['id']}.md"
     if cached.exists() and cached.stat().st_size > 0:
         return cached.read_text(encoding="utf-8", errors="replace")
     if offline:
         raise FileNotFoundError(f"{src['id']}: not cached and --offline was requested")
+
     url = f"https://raw.githubusercontent.com/{src['owner']}/{src['repo']}/{src['branch']}/README.md"
-    req = urllib.request.Request(url, headers={"User-Agent": "awesomes-extract"})
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        text = resp.read().decode("utf-8", "replace")
+
+    text: str | None = None
+    if SCRAPLING:
+        resp = Fetcher.get(url, timeout=60, stealthy_headers=True, follow_redirects=True)
+        if resp.status != 200:
+            raise RuntimeError(f"HTTP {resp.status} for {url}")
+        body = getattr(resp, "body", None)
+        if isinstance(body, bytes):
+            text = body.decode("utf-8", "replace")
+        else:
+            getter = getattr(resp, "get_all_text", None)
+            text = getter() if callable(getter) else str(body)
+
+    if not text:
+        req = urllib.request.Request(url, headers={"User-Agent": "awesomes-extract"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            text = r.read().decode("utf-8", "replace")
+
+    if not text.strip():
+        raise RuntimeError(f"empty README body for {url}")
+
     cached.write_text(text, encoding="utf-8")
     return text
 
@@ -235,7 +269,7 @@ def main() -> int:
     prev = previous_counts()
 
     entries: dict[str, dict] = {}
-    source_counts: dict[str, int] = {}
+    parsed_counts: dict[str, int] = {}
     unresolved: list[dict] = []
 
     for src in registry["sources"]:
@@ -243,7 +277,7 @@ def main() -> int:
             text = fetch_readme(src, args.offline)
         except Exception as exc:  # noqa: BLE001 — report, do not abort the corpus
             print(f"  ! {src['id']}: could not read README — {exc}", file=sys.stderr)
-            source_counts[src["id"]] = 0
+            parsed_counts[src["id"]] = 0
             continue
 
         raw: list[dict] = []
@@ -263,13 +297,14 @@ def main() -> int:
                 print(f"  ! {src['id']}: parser '{fmt}' failed — {exc}", file=sys.stderr)
                 return 2
 
-        kept = 0
+        parsed_n = 0
         for e in raw:
             pair = owner_repo(e["url"])
             if pair is None:
                 if e.get("relative"):
                     unresolved.append({"source": src["id"], "link": e["url"]})
                 continue
+            parsed_n += 1
             owner, repo = pair
             if e.get("relative"):
                 # A project inside a monorepo is not the same entry as that repository.
@@ -300,19 +335,31 @@ def main() -> int:
                     "verified_at": None,
                     "unavailable": False,
                 }
-                kept += 1
-        source_counts[src["id"]] = kept
+                # How many references this source's parsers resolved. This — not the membership
+        # count below — is the figure a parser regression moves, so the delta check uses it.
+        parsed_counts[src["id"]] = parsed_n
+
+    # A source counts every entry it mentions, including ones another source mentioned
+    # first. Counting only the first claimer made source_counts disagree with the
+    # distribution chips on the site: awesome-laravel read 220 here and 225 there.
+    source_counts: dict[str, int] = {}
+    for e in entries.values():
+        for sid in e["sources"]:
+            source_counts[sid] = source_counts.get(sid, 0) + 1
 
     # Category attribution: the source's own headings, namespaced. No invented taxonomy.
-    print(f"\n{'source':<24} {'entries':>8} {'previous':>9} {'delta':>8}")
-    print("-" * 54)
-    for sid, n in sorted(source_counts.items(), key=lambda x: -x[1]):
+    print(f"\n{'source':<24} {'parsed':>8} {'previous':>9} {'delta':>8} {'shared':>8}")
+    print("-" * 66)
+    for sid, n in sorted(parsed_counts.items(), key=lambda x: -x[1]):
         before = prev.get(sid)
         delta = f"{n - before:+d}" if before is not None else "—"
         flag = ""
         if before is not None and n < before * 0.9:
             flag = "  <-- large drop, check the parser"
-        print(f"{sid:<24} {n:>8,} {str(before if before is not None else '—'):>9} {delta:>8}{flag}")
+        print(
+            f"{sid:<24} {n:>8,} {str(before if before is not None else '—'):>9} "
+            f"{delta:>8} {source_counts.get(sid, 0):>8,}{flag}"
+        )
     print("-" * 54)
     multi = sum(1 for e in entries.values() if len(e["sources"]) > 1)
     print(f"unique entries: {len(entries):,}   in >1 source: {multi}   unresolved: {len(unresolved)}")

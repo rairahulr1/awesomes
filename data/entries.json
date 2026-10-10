@@ -1,16 +1,16 @@
 {
- "generated_at": "2026-10-10T12:26:08Z",
+ "generated_at": "2026-10-10T12:49:41Z",
  "source_counts": {
   "awesome-mcp-servers": 4224,
+  "awesome-opencode": 218,
+  "awesome-claude-skills": 137,
   "awesome-php": 388,
-  "awesome-laravel": 220,
+  "awesome-laravel": 225,
   "awesome-ai-tools": 42,
-  "awesome-ai-engineering": 34,
-  "awesome-opencode": 211,
+  "awesome-ai-agents": 74,
+  "awesome-ai-engineering": 35,
   "awesome-llm-apps": 119,
-  "awesome-ai-apps": 138,
-  "awesome-claude-skills": 136,
-  "awesome-ai-agents": 71
+  "awesome-ai-apps": 138
  },
  "unresolved": [],
  "entries": [

@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { defineConfig } from 'vitepress'
+import { buildChunks, CHUNK_DIR } from '../../tools/entry_chunks.mjs'
 
 const SITE = 'https://awesome.rairahulr1.com'
 // __dirname is docs/.vitepress (VitePress root is docs/), so entry pages are one level up.
@@ -47,13 +48,8 @@ if (!fs.existsSync(ENTRIES_JSON)) {
   )
 }
 const parsedEntries = JSON.parse(fs.readFileSync(ENTRIES_JSON, 'utf8'))
-const entryIndex = {
-  generated_at: parsedEntries.generated_at ?? null,
-  source_counts: parsedEntries.source_counts ?? {},
-  unresolved: parsedEntries.unresolved ?? [],
-  entries: parsedEntries.entries ?? [],
-}
-if (!entryIndex.entries.length) {
+const entries = parsedEntries.entries ?? []
+if (!entries.length) {
   throw new Error('data/entries.json contains no entries — refusing to publish an empty index.')
 }
 
@@ -64,10 +60,84 @@ const sourceMeta = (() => {
   const { sources } = JSON.parse(fs.readFileSync(registryPath, 'utf8'))
   return sources.map((s) => ({
     ...s,
-    entryCount: entryIndex.source_counts[s.id] ?? 0,
+    entryCount: parsedEntries.source_counts?.[s.id] ?? 0,
     page: `/repos/${s.id}`,
   }))
 })()
+
+// Aggregates only. These stay in themeConfig on purpose: they are a few hundred bytes, they let
+// the provenance stamp, the source chips and the default "N matches" render straight out of the
+// static HTML, and — unlike the records — they cost nothing on the pages that never show them.
+//
+// The 5,583 records deliberately do NOT go in themeConfig. Anything in themeConfig is serialised
+// into the client bundle *and* into every rendered page's HTML, which is what made this page
+// 2.39 MB and each of the other thirteen ~2.2 MB. See tools/entry_chunks.mjs for the format and
+// the chunking strategy.
+const entryIndex = {
+  generated_at: parsedEntries.generated_at ?? null,
+  source_counts: parsedEntries.source_counts ?? {},
+  unresolved: parsedEntries.unresolved ?? [],
+  total: entries.length,
+  multi: entries.filter((e) => (e.sources ?? []).length > 1).length,
+  described: entries.filter((e) => (e.description ?? '').length > 8).length,
+}
+
+// Plan the static JSON chunks once, at config time. The same plan is used twice: written to the
+// build output by buildEnd (production) and served from memory by a dev middleware (npm run dev),
+// so the page behaves identically in both.
+const { manifest, files: plannedFiles, records: chunkRecords } = buildChunks({
+  entries,
+  sourceIds: sourceMeta.map((s) => s.id),
+  generatedAt: entryIndex.generated_at,
+  sourcePages: Object.fromEntries(sourceMeta.map((s) => [s.id, s.page])),
+})
+
+// manifest.json travels with the chunks rather than in the page bundle: it is ~2 KB and it is only
+// needed once a reader actually filters, so the client fetches it alongside the chunks. It names
+// every chunk, which is what makes the shipped data set self-describing.
+const chunkFiles = new Map(plannedFiles)
+chunkFiles.set(`${CHUNK_DIR}/manifest.json`, JSON.stringify(manifest))
+
+// Bootstrap payload imported by docs/repositories.md. It carries exactly the first page of records
+// — the ones the static HTML renders — so SSR and hydration agree on the initial markup without a
+// fetch, plus everything needed to decode and filter them. Written on every config load and
+// gitignored: it is build scaffolding, not an input anyone edits.
+const GENERATED_DIR = path.resolve(__dirname, 'generated')
+fs.mkdirSync(GENERATED_DIR, { recursive: true })
+fs.writeFileSync(
+  path.join(GENERATED_DIR, 'repo-page.json'),
+  JSON.stringify({
+    v: manifest.v,
+    generated_at: entryIndex.generated_at,
+    sourceIds: manifest.sourceIds,
+    sources: manifest.sources,
+    stats: {
+      total: entryIndex.total,
+      multi: entryIndex.multi,
+      described: entryIndex.described,
+      sourceCounts: manifest.sourceCounts,
+    },
+    entries: chunkRecords.get('page'),
+  }),
+)
+
+// Serve the chunk files from memory in dev. VitePress has no top-level configureServer hook, so
+// this goes through Vite's plugin list; it is a no-op for `vitepress build` (apply: 'serve').
+const entryChunksDevServer = {
+  name: 'awesomes:entry-chunks-dev',
+  apply: 'serve',
+  configureServer(server) {
+    server.middlewares.use((req, res, next) => {
+      const pathname = (req.url ?? '').split('?')[0]
+      const match = pathname.match(/\/([^/]+\.json)$/)
+      const body = match && chunkFiles.get(`${CHUNK_DIR}/${match[1]}`)
+      if (!body) return next()
+      res.setHeader('Content-Type', 'application/json; charset=utf-8')
+      res.setHeader('Cache-Control', 'no-store')
+      res.end(body)
+    })
+  },
+}
 
 // Dedupe on canonical owner/repo so the same source can never be indexed twice.
 const slugOf = (url) => url.replace(/^https?:\/\/(www\.)?github\.com\//i, '').replace(/\/+$/, '').toLowerCase()
@@ -107,6 +177,24 @@ export default defineConfig({
     'A searchable, deduplicated index of curated awesome GitHub repositories — original descriptions preserved, source links direct.',
   cleanUrls: true,
   lastUpdated: true,
+
+  // `npm run dev` needs the chunk files too; production writes them in buildEnd below.
+  vite: { plugins: [entryChunksDevServer] },
+
+  // Runs after every page is rendered and written. This is the only point at which outDir is
+  // final, which matters: VitePress empties and rebuilds it from scratch.
+  buildEnd(siteConfig) {
+    for (const [relPath, body] of chunkFiles) {
+      const dest = path.join(siteConfig.outDir, relPath)
+      fs.mkdirSync(path.dirname(dest), { recursive: true })
+      fs.writeFileSync(dest, body)
+    }
+    const total = [...chunkFiles.values()].reduce((n, b) => n + b.length, 0)
+    siteConfig.logger.info(
+      `\n  repo-index: ${chunkFiles.size} chunk files, ${(total / 1024).toFixed(0)} KiB total ` +
+        `(${(total / 1024 / 1024).toFixed(2)} MiB) written to ${CHUNK_DIR}/\n`,
+    )
+  },
 
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],

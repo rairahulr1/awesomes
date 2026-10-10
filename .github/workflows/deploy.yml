@@ -39,10 +39,12 @@ jobs:
       # returning 404s for this repo, and a force-pushed branch needs no extra dependency.
       - name: Publish to gh-pages
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           cd docs/.vitepress/dist
           git init -q
+          # Identity must be set here, not in the parent repo: git init creates a fresh
+          # repository that does not inherit the checkout's local config.
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -qB gh-pages
           git add -A
           git commit -q -m "deploy: ${GITHUB_SHA}"

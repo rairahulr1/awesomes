@@ -49,5 +49,5 @@ jobs:
           git add -A
           git commit -q -m "deploy: ${GITHUB_SHA}"
           git push -q --force \
-            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" \
             gh-pages

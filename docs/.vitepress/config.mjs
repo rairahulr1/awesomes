@@ -36,6 +36,32 @@ function parseFrontmatter(raw) {
 // keeps it available during SSR, which useData().pages is not.
 const repoFiles = fs.readdirSync(REPO_DOCS).filter((f) => f.endsWith('.md'))
 
+// The generated repository index. Optional: the site builds without it so a failed extraction
+// never takes the list pages down with it.
+const ENTRIES_JSON = path.resolve(__dirname, '..', '..', 'data', 'entries.json')
+let entryIndex = { generated_at: null, entries: [], source_counts: {}, unresolved: [] }
+if (fs.existsSync(ENTRIES_JSON)) {
+  const parsed = JSON.parse(fs.readFileSync(ENTRIES_JSON, 'utf8'))
+  entryIndex = {
+    generated_at: parsed.generated_at ?? null,
+    source_counts: parsed.source_counts ?? {},
+    unresolved: parsed.unresolved ?? [],
+    entries: parsed.entries ?? [],
+  }
+}
+
+// Per-source entry counts, for display on the sources index.
+const sourceMeta = (() => {
+  const registryPath = path.resolve(__dirname, '..', '..', 'sources.json')
+  if (!fs.existsSync(registryPath)) return []
+  const { sources } = JSON.parse(fs.readFileSync(registryPath, 'utf8'))
+  return sources.map((s) => ({
+    ...s,
+    entryCount: entryIndex.source_counts[s.id] ?? 0,
+    page: `/repos/${s.id}`,
+  }))
+})()
+
 // Dedupe on canonical owner/repo so the same source can never be indexed twice.
 const slugOf = (url) => url.replace(/^https?:\/\/(www\.)?github\.com\//i, '').replace(/\/+$/, '').toLowerCase()
 
@@ -127,9 +153,12 @@ export default defineConfig({
   themeConfig: {
     // Consumed by the index pages via useData().theme — available during SSR.
     repos,
+    sources: sourceMeta,
+    entryIndex,
     nav: [
       { text: 'Index', link: '/' },
-      { text: 'All lists', link: '/repos/' },
+      { text: 'Sources', link: '/sources/' },
+      { text: 'Repositories', link: '/repositories/' },
     ],
     sidebar: {
       '/repos/': [

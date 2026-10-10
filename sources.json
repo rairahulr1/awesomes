@@ -1,0 +1,104 @@
+{
+  "$comment": "Source registry for the repository index. Each source declares every link format its README uses — several use more than one. Formats are declared, not inferred, so an unrecognised format fails loudly instead of silently matching nothing.",
+  "sources": [
+    {
+      "id": "awesome-mcp-servers",
+      "owner": "punkpeye",
+      "repo": "awesome-mcp-servers",
+      "branch": "main",
+      "formats": [
+        "bullet_separator"
+      ],
+      "notes": "Glama badge URLs are inline decorations inside the bullet, not the entry link. The first link on each line is the GitHub repo."
+    },
+    {
+      "id": "awesome-php",
+      "owner": "ziadoz",
+      "repo": "awesome-php",
+      "branch": "master",
+      "formats": [
+        "bullet_separator"
+      ]
+    },
+    {
+      "id": "awesome-laravel",
+      "owner": "chiraggude",
+      "repo": "awesome-laravel",
+      "branch": "master",
+      "formats": [
+        "bullet_separator"
+      ]
+    },
+    {
+      "id": "awesome-ai-tools",
+      "owner": "mahseema",
+      "repo": "awesome-ai-tools",
+      "branch": "main",
+      "formats": [
+        "bullet_separator"
+      ]
+    },
+    {
+      "id": "awesome-ai-engineering",
+      "owner": "dipakkr",
+      "repo": "awesome-ai-engineering",
+      "branch": "master",
+      "formats": [
+        "table_row",
+        "bullet_separator"
+      ],
+      "notes": "Genuinely two-format: 353 table rows and 767 bullets."
+    },
+    {
+      "id": "awesome-opencode",
+      "owner": "awesome-opencode",
+      "repo": "awesome-opencode",
+      "branch": "main",
+      "formats": [
+        "table_row",
+        "html_details"
+      ],
+      "notes": "Plugins live in raw HTML <details>/<summary> blocks, not markdown bullets. The 4 table rows are the Official Repositories section only."
+    },
+    {
+      "id": "awesome-llm-apps",
+      "owner": "Shubhamsaboo",
+      "repo": "awesome-llm-apps",
+      "branch": "main",
+      "formats": [
+        "repo_relative"
+      ],
+      "notes": "Entries are directories inside this repository. Resolving against the base URL is what makes them visible."
+    },
+    {
+      "id": "awesome-ai-apps",
+      "owner": "Arindam200",
+      "repo": "awesome-ai-apps",
+      "branch": "main",
+      "formats": [
+        "repo_relative"
+      ]
+    },
+    {
+      "id": "awesome-claude-skills",
+      "owner": "ComposioHQ",
+      "repo": "awesome-claude-skills",
+      "branch": "master",
+      "formats": [
+        "bullet_separator",
+        "repo_relative"
+      ],
+      "notes": "Two-format: 76 external bullets and 101 ./relative-dir/ links."
+    },
+    {
+      "id": "awesome-ai-agents",
+      "owner": "e2b-dev",
+      "repo": "awesome-ai-agents",
+      "branch": "main",
+      "formats": [
+        "project_prose"
+      ],
+      "notes": "215 project headings, each followed by a prose block. No per-entry description delimiter."
+    }
+  ]
+}

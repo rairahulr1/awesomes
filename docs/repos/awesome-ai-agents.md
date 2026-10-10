@@ -26,17 +26,22 @@ outgrew its maintainers.
 ## What's inside
 
 Unlike every other list here, this one has **no categories**. It is a flat, alphabetical catalogue of
-**215 open-source agent projects**, each given its own `##` heading, a link, and a short
-description:
+**215 projects**, each given its own `##` heading, a link, and a short description.
+
+It is also a catalogue of *products*, not only code: of the 215, only **75 link to a GitHub
+repository**. The other 140 point at the project's own site — `agentgpt.reworkd.ai`, `agpt.co`,
+`replit.com/@user/…`, and a striking number of bare `twitter.com/status/…` links from 2023. So the
+"open source" framing is only accurate for about a third of the list, and the repository index built
+from this source carries the 75 that qualify.
 
 - **Framing sections** — "Have anything to add?", "Who's behind this?", "Check out E2B — Code
   Interpreting for AI apps"
-- **Open-source projects** — one `##` per project, A→Z
+- **Projects** — one `##` per project, A→Z
 
 The alphabetical run is itself the clearest evidence of the list's vintage. Entries cluster heavily
 around the 2023 name-collision wave: `AgentGPT`, `AutoGPT`, `BabyAGI`, `BabyBeeAGI`, `BabyCatAGI`,
-`BabyDeerAGI`, `BabyElfAGI`, `BabyCommandAGI`, `BabyFoxAGI` — nine of 215 entries are BabyAGI forks.
-Later entries (`Adala`, `AutoGen`, `Aider`) are the ones still worth reading.
+`BabyDeerAGI`, `BabyElfAGI`, `BabyCommandAGI`, `BabyFoxAGI` — nine BabyAGI forks, several of which
+exist only as tweets. Later entries (`Adala`, `AutoGen`, `Aider`) are the ones still worth reading.
 
 The README also carries a visible `<!-- TBD -->` comment block listing projects queued for addition
 and entries deferred pending review. It is an honest work-in-progress, but a published TODO block

@@ -5,35 +5,47 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Pages is served from the gh-pages branch, pushed by this workflow.
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: npm ci
 
       - name: Build VitePress
         run: npm run build
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs/.vitepress/dist
+      - name: Skip Jekyll on the published tree
+        run: touch docs/.vitepress/dist/.nojekyll
 
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v3
+      # Plain git rather than a third-party publish action: the deploy-pages API was
+      # returning 404s for this repo, and a force-pushed branch needs no extra dependency.
+      - name: Publish to gh-pages
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cd docs/.vitepress/dist
+          git init -q
+          git checkout -qB gh-pages
+          git add -A
+          git commit -q -m "deploy: ${GITHUB_SHA}"
+          git push -q --force \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            gh-pages

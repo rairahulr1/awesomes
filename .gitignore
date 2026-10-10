@@ -10,5 +10,8 @@ __pycache__/
 .DS_Store
 *.log
 
-# data/ is deliberately TRACKED: the site build fails without data/entries.json,
+# Enrichment checkpoints are run state, not source — regenerable by rerunning.
+data/enrichment/
+
+# data/entries.json is deliberately TRACKED: the site build fails without it,
 # and a gitignored input would make CI publish an empty repository index.

@@ -1,9 +1,9 @@
 ---
 title: awesome-php
 url: https://github.com/ziadoz/awesome-php
-stars: 32700
-stars_as_of: 2026-10-09
-stars_source: github-repo-page-badge
+stars: 32736
+stars_as_of: 2026-10-10
+stars_source: github-rest-api
 type: libraries
 categories: [php, backend]
 tags: [php, composer, frameworks, symfony, laravel, testing, security, awesome-php]

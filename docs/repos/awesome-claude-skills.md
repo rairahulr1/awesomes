@@ -1,9 +1,9 @@
 ---
 title: awesome-claude-skills
 url: https://github.com/ComposioHQ/awesome-claude-skills
-stars: 76700
-stars_as_of: 2026-10-09
-stars_source: github-repo-page-badge
+stars: 76778
+stars_as_of: 2026-10-10
+stars_source: github-rest-api
 type: skills
 categories: [ai, skills, agents, mcp]
 tags: [agent-skills, claude, claude-code, codex, cursor, gemini-cli, mcp, automation, saas]

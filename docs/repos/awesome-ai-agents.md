@@ -1,9 +1,9 @@
 ---
 title: awesome-ai-agents
 url: https://github.com/e2b-dev/awesome-ai-agents
-stars: 30300
-stars_as_of: 2026-10-09
-stars_source: github-repo-page-badge
+stars: 30326
+stars_as_of: 2026-10-10
+stars_source: github-rest-api
 type: agents
 categories: [ai, agents]
 tags: [agent, ai, artificial-intelligence, autogpt, autonomous-agents, babyagi, gpt, gpt-engineer, openai, python, awesome-ai-agents]
@@ -23,22 +23,32 @@ reference `autogpt`, `babyagi` and `gpt-engineer` — the 2023 agent wave — wh
 otherwise. 949 open PRs against 473 commits is the signature of a list whose contributor queue
 outgrew its maintainers.
 
-## About this list
+## What's inside
 
-Autonomous-agent implementations collected by a company selling sandboxed code execution (E2B),
-so the list doubles as a demo surface for their product.
+Unlike every other list here, this one has **no categories**. It is a flat, alphabetical catalogue of
+**215 open-source agent projects**, each given its own `##` heading, a link, and a short
+description:
 
-## Coverage note
+- **Framing sections** — "Have anything to add?", "Who's behind this?", "Check out E2B — Code
+  Interpreting for AI apps"
+- **Open-source projects** — one `##` per project, A→Z
 
-The README body did not render when this entry was created, so no section breakdown is recorded
-here. This is deliberate — the alternative would be inventing structure I could not read. The
-source link is authoritative.
+The alphabetical run is itself the clearest evidence of the list's vintage. Entries cluster heavily
+around the 2023 name-collision wave: `AgentGPT`, `AutoGPT`, `BabyAGI`, `BabyBeeAGI`, `BabyCatAGI`,
+`BabyDeerAGI`, `BabyElfAGI`, `BabyCommandAGI`, `BabyFoxAGI` — nine of 215 entries are BabyAGI forks.
+Later entries (`Adala`, `AutoGen`, `Aider`) are the ones still worth reading.
+
+The README also carries a visible `<!-- TBD -->` comment block listing projects queued for addition
+and entries deferred pending review. It is an honest work-in-progress, but a published TODO block
+tells you the maintainer does not treat the README as finished.
 
 ## Notes
 
-- Check the topics before assuming currency: `gpt-4` and `gpt-engineer` as topic tags suggest the
-  list's curation metadata has not been revisited in some time.
+- GitHub topics still read `autogpt`, `babyagi`, `gpt-engineer` — the 2023 agent wave. 949 open PRs
+  against 473 commits is the signature of a contributor queue that outgrew its maintainers.
 - E2B's own README links point at `docs.e2b.dev` with referral parameters — the list is a funnel.
 - Licence is a bare `LICENSE.md` link with no recognised SPDX identifier in the repo header.
+- Because there are no categories, this is the least searchable list in the index. The alphabetical
+  structure means you scan it; you cannot filter it.
 
 <Comments />

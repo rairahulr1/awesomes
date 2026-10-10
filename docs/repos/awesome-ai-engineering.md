@@ -1,9 +1,9 @@
 ---
 title: awesome-ai-engineering
 url: https://github.com/dipakkr/awesome-ai-engineering
-stars: 22300
-stars_as_of: 2026-10-09
-stars_source: github-repo-page-badge
+stars: 22349
+stars_as_of: 2026-10-10
+stars_source: github-rest-api
 type: resources
 categories: [ai, ml, devops, web3, security]
 tags: [agentic-ai, ai-agents, ai-engineering, ai-tools, awesome-lists, fine-tuning, generative-ai, llm, llmops, machine-learning, mcp, prompt-engineering, rag]

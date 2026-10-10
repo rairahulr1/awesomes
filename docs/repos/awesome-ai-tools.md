@@ -1,9 +1,9 @@
 ---
 title: awesome-ai-tools
 url: https://github.com/mahseema/awesome-ai-tools
-stars: 6400
-stars_as_of: 2026-10-09
-stars_source: github-repo-page-badge
+stars: 6381
+stars_as_of: 2026-10-10
+stars_source: github-rest-api
 type: tools
 categories: [ai, tools]
 tags: [ai, ai-tools, ai-top-tools, awesome-ai-tools, mlops, vibe-coding, workflow, awesome-list]

@@ -1,9 +1,9 @@
 ---
 title: awesome-llm-apps
 url: https://github.com/Shubhamsaboo/awesome-llm-apps
-stars: 140900
-stars_as_of: 2026-10-09
-stars_source: github-repo-page-badge
+stars: 141026
+stars_as_of: 2026-10-10
+stars_source: github-rest-api
 type: apps
 categories: [ai, agents, skills, rag]
 tags: [agents, llms, python, rag, awesome-llm-apps]

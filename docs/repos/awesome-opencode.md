@@ -1,9 +1,9 @@
 ---
 title: awesome-opencode
 url: https://github.com/awesome-opencode/awesome-opencode
-stars: 10500
-stars_as_of: 2026-10-09
-stars_source: github-repo-page-badge
+stars: 10533
+stars_as_of: 2026-10-10
+stars_source: github-rest-api
 type: plugins
 categories: [ai, agents, devtools]
 tags: [opencode, plugins, themes, agents, projects, resources, awesome-opencode]

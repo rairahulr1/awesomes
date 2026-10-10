@@ -1,9 +1,9 @@
 ---
 title: awesome-laravel
 url: https://github.com/chiraggude/awesome-laravel
-stars: 13100
-stars_as_of: 2026-10-09
-stars_source: github-repo-page-badge
+stars: 13109
+stars_as_of: 2026-10-10
+stars_source: github-rest-api
 type: libraries
 categories: [php, laravel, backend]
 tags: [laravel, php, packages, tutorials, books, community, awesome-laravel]

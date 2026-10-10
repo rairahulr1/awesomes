@@ -1,9 +1,9 @@
 ---
 title: awesome-ai-apps
 url: https://github.com/Arindam200/awesome-ai-apps
-stars: 16100
-stars_as_of: 2026-10-09
-stars_source: github-repo-page-badge
+stars: 16098
+stars_as_of: 2026-10-10
+stars_source: github-rest-api
 type: apps
 categories: [ai, agents, rag, mcp]
 tags: [agents, ai, hacktoberfest, llm, mcp, awesome-ai-apps]

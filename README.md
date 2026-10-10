@@ -1,85 +1,101 @@
 # awesomes
 
-A curated index of awesome GitHub repositories, organized by category for easy discovery and search.
+**Live:** [awesome.rairahulr1.com](https://awesome.rairahulr1.com) · **Source:** this repo
 
-**Live at:** [awesome.rairahulr1.com](https://awesome.rairahulr1.com)
+A searchable index of curated `awesome-*` lists on GitHub. One page per source list: the original
+description preserved verbatim, a nest-level breakdown of what that list actually contains, a
+star count snapshotted from GitHub, a direct link to the source, and its own comment thread.
 
-This repository serves as a single source of awesome repos, with markdown entries for each repo that include:
-- Title and GitHub link
-- Star count
-- Category classification
-- Description summary
-- Tag (repo name)
-- SEO-friendly structure for Reddit sharing
-- Comment section via Utterances
+Nothing is mirrored. Every entry is an index entry, not a fork.
 
-## 📁 Repository Structure
+## Why this exists
+
+`awesome-*` lists already exist and are well-maintained. What they lack is a way to *compare* them —
+there is no single page that says "here are the 10 lists worth knowing, here's what each one
+covers, here's which are still alive". This repo is that page.
+
+## Structure
 
 ```
 awesomes/
-├── .github/workflows/deploy.yml    # GitHub Actions for auto-deploy
+├── .github/workflows/deploy.yml   # build → force-push dist to gh-pages
 ├── docs/
-│   ├── .vitepress/config.mjs       # VitePress configuration
-│   ├── index.md                    # Landing page with category grid
-│   └── repos/                      # Individual repo entries
-│       ├── awesome-opencode.md
-│       ├── awesome-php.md
-│       ├── awesome-laravel.md
-│       ├── awesome-llm-apps.md
-│       ├── awesome-mcp-servers.md
-│       ├── awesome-ai-engineering.md
-│       ├── awesome-ai-agents.md
-│       ├── awesome-claude-skills.md
-│       ├── awesome-ai-apps.md
-│       └── awesome-ai-tools.md
-└── README.md
+│   ├── .vitepress/
+│   │   ├── config.mjs             # reads entries, emits index + SEO meta
+│   │   ├── components/            # RepoIndex.vue, Comments.vue
+│   │   └── theme/index.js
+│   ├── public/                    # favicon.svg, og.png, CNAME
+│   ├── index.md                   # search + filter UI
+│   └── repos/                     # one page per indexed list
+│       └── <name>.md
+└── tools/make_og.py               # regenerates the Open Graph card
 ```
 
-## 🛠️ Adding a New Repo
+## Adding an entry
 
-1. Add a new markdown file in `docs/repos/` following the existing format
-2. Include frontmatter with: `title`, `url`, `stars`, `category`, `tag`, `description`
-3. Push — GitHub Actions will build and deploy automatically
-4. Update the category grid in `docs/index.md` if needed
+Create `docs/repos/<name>.md` with this frontmatter:
 
-## 📦 Tech Stack
+```yaml
+---
+title: awesome-thing
+url: https://github.com/owner/awesome-thing   # required — also the dedupe key
+stars: 12300
+stars_as_of: 2026-10-09
+stars_source: github-repo-page-badge
+type: libraries                                # libraries | apps | agents | skills | tools | servers | plugins | resources
+categories: [php, backend]                     # shown as chips, filterable
+tags: [php, composer]                          # searchable, not shown
+description: The upstream description, verbatim.
+license: MIT
+---
+```
 
-- **Static Site Generator:** [VitePress](https://vitepress.dev)
-- **Hosting:** [GitHub Pages](https://pages.github.com) with custom domain `awesome.rairahulr1.com`
-- **Search:** Built-in VitePress local search
-- **Comments:** [Utterances](https://utterances.app/) (GitHub Issue-based)
-- **CI/CD:** GitHub Actions auto-deploy on push to `main`
+Body: an H1, the description as a blockquote, a source line, a breakdown of the source's own
+section structure, and `<Comments />`.
 
-## 🏷️ Categories
+Nothing else needs editing — the sidebar, the category and type filters, the all-lists table and the
+count are all derived from the frontmatter at build time.
 
-| Category | Repos |
-|----------|-------|
-| **AI & LLM** | awesome-llm-apps, awesome-ai-engineering, awesome-ai-agents, awesome-claude-skills, awesome-ai-apps, awesome-ai-tools |
-| **PHP** | awesome-php, awesome-laravel |
-| **MCP** | awesome-mcp-servers |
-| **Devtools** | awesome-opencode |
+## How it works
 
-## 🔍 Search
+| Concern | Approach |
+|---|---|
+| Entry list | Parsed from `docs/repos/*.md` at config time and passed via `themeConfig.repos` |
+| Why not `useData().pages` | It is empty during SSR, which silently renders an empty page |
+| Dedupe | Canonical `owner/repo` from `url`; first occurrence wins |
+| Search | VitePress local search (client-side index, no backend) |
+| Filtering | Category and type dropdowns over the same array |
+| Comments | Utterances, one GitHub issue per page path |
+| SEO | Per-page canonical, Open Graph, Twitter cards and `SoftwareSourceCode` JSON-LD |
+| Hosting | GitHub Pages served from `gh-pages`, custom domain via `docs/public/CNAME` |
 
-Built-in VitePress local search indexes all repo titles, descriptions, and categories. Search is client-side, no backend required.
+### Deployment
 
-## 💬 Comments
+`main` pushes build the site and force-push `docs/.vitepress/dist` to `gh-pages`. This is plain
+`git`, not `actions/deploy-pages` — that action returned `404 Cannot find any run with
+github.run_id` on every attempt for this repo. A `.nojekyll` in the published tree stops Pages from
+running Jekyll over the output.
 
-Each repo page includes Utterances comments, tied to a GitHub Issue. The issue path is derived from the repo name, so discussions are per-repo.
+### Star counts are snapshots
 
-## 🚀 Development
+`stars` and `stars_as_of` are read off the GitHub repo page at the time of writing and **will
+drift**. They are display metadata, not a live figure; the source link is authoritative. There is no
+refresh job — see the open question below.
+
+## Local development
 
 ```bash
-# Install dependencies
 npm ci
-
-# Run dev server
-npm run dev
-
-# Build for production
-npm run build
+npm run dev      # http://localhost:5173
+npm run build    # → docs/.vitepress/dist
+npm run serve    # preview the built site
 ```
 
-## 📄 License
+## Open questions
 
-MIT License - see LICENSE file for details.
+- **Star freshness.** Should a scheduled job refresh counts, or should `stars` be dropped in favour
+  of a live shields.io badge at render time?
+- **Depth.** Pages currently carry the source's own top-level section structure. Where a source is
+  deeper, that should be expanded too — but only where it was actually read, never inferred.
+- **Contribution flow.** Currently direct commits to `main`. If this takes outside contributors,
+  the entry format above is the natural PR contract.

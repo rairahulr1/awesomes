@@ -36,18 +36,25 @@ function parseFrontmatter(raw) {
 // keeps it available during SSR, which useData().pages is not.
 const repoFiles = fs.readdirSync(REPO_DOCS).filter((f) => f.endsWith('.md'))
 
-// The generated repository index. Optional: the site builds without it so a failed extraction
-// never takes the list pages down with it.
+// The generated repository index. This file is tracked, so its absence is a real error rather
+// than a tolerable degraded state: building without it silently publishes an empty repository
+// index that looks healthy and renders 200. Fail the build instead.
 const ENTRIES_JSON = path.resolve(__dirname, '..', '..', 'data', 'entries.json')
-let entryIndex = { generated_at: null, entries: [], source_counts: {}, unresolved: [] }
-if (fs.existsSync(ENTRIES_JSON)) {
-  const parsed = JSON.parse(fs.readFileSync(ENTRIES_JSON, 'utf8'))
-  entryIndex = {
-    generated_at: parsed.generated_at ?? null,
-    source_counts: parsed.source_counts ?? {},
-    unresolved: parsed.unresolved ?? [],
-    entries: parsed.entries ?? [],
-  }
+if (!fs.existsSync(ENTRIES_JSON)) {
+  throw new Error(
+    `data/entries.json is missing. Run: python3 tools/extract_links.py\n` +
+      `Refusing to build an empty repository index — a missing input must fail loudly.`,
+  )
+}
+const parsedEntries = JSON.parse(fs.readFileSync(ENTRIES_JSON, 'utf8'))
+const entryIndex = {
+  generated_at: parsedEntries.generated_at ?? null,
+  source_counts: parsedEntries.source_counts ?? {},
+  unresolved: parsedEntries.unresolved ?? [],
+  entries: parsedEntries.entries ?? [],
+}
+if (!entryIndex.entries.length) {
+  throw new Error('data/entries.json contains no entries — refusing to publish an empty index.')
 }
 
 // Per-source entry counts, for display on the sources index.

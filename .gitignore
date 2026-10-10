@@ -3,7 +3,9 @@ docs/.vitepress/dist/
 docs/.vitepress/cache/
 .vitepress/dist/
 .vitepress/cache/
-data/
 .cache/
 .DS_Store
 *.log
+
+# data/ is deliberately TRACKED: the site build fails without data/entries.json,
+# and a gitignored input would make CI publish an empty repository index.

@@ -79,6 +79,10 @@ export default defineConfig({
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
     ['meta', { name: 'theme-color', content: '#0d1117' }],
     ['meta', { property: 'og:site_name', content: 'awesomes' }],
+    ['meta', { property: 'og:image', content: `${SITE}/og.png` }],
+    ['meta', { property: 'og:image:width', content: '1200' }],
+    ['meta', { property: 'og:image:height', content: '630' }],
+    ['meta', { name: 'twitter:image', content: `${SITE}/og.png` }],
   ],
 
   // SEO: every page gets canonical + Open Graph/Twitter tags from its own frontmatter.
